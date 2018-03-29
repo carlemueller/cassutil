@@ -23,6 +23,10 @@ Result Sets that span across time bucketed/sharded tables of data
 
 Result Sets that wrap paging and logic to pull more results automatically. 
 
+## Diffing sets
+
+Result Sets that detect differences in data between two tables (for after migrations or moving data around)
+
 ## Artifacts
 
 Using jitpack:
