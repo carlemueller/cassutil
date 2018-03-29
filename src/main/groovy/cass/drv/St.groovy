@@ -20,4 +20,23 @@ class St {
     String keyspace
     Integer fetchSize
     Integer fetchThreshold
+
+    String getKs() { keyspace }
+
+    void setKs(String ks) { keyspace = ks }
+
+    St() {}
+
+    St(String cql, Object[] args) { this.cql = cql; this.args = args }
+
+    St(String keyspace, String cql, Object[] args) { this.keyspace = keyspace; this.cql = cql; this.args = args }
+
+    St(String keyspace, String cql, Object[] args, String consistency, Long timestamp) {
+        this.keyspace = keyspace
+        this.cql = cql
+        this.args = args
+        this.consistency = consistency
+        this.timestamp = timestamp
+    }
+
 }
