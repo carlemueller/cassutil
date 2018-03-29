@@ -9,7 +9,6 @@ import com.datastax.driver.core.ResultSet
 import com.datastax.driver.core.Row
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import jsonutil.JSONUtil
 
 /**
  * This result set is intended to provide query services for a group of sharded tables with an implicit order to the
@@ -96,7 +95,6 @@ class TimeBucketedRS implements Rs<Row> {
         if (!initialized) throw new IllegalStateException('TimeBucketedRS not yet initialized')
         fetchMore()
         Row row = curBucketRS.one()
-        log.trace "TBRS.one :: "+ (row == null ? null : JSONUtil.toJSON(RowU.toList(row)))
         return row
     }
 
