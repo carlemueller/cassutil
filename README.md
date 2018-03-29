@@ -1,6 +1,6 @@
 # cassutil
 
-General cassandra java-driver utilities and wrappers
+A grabbag of cassandra java-driver utilities and wrappers
 
 ## Driver wrapper
 
@@ -25,7 +25,7 @@ Result Sets that wrap paging and logic to pull more results automatically.
 
 ## Diffing sets
 
-Result Sets that detect differences in data between two tables (for after migrations or moving data around)
+Utilities that detect differences in data between two tables (for after migrations or moving data around)
 
 ## Artifacts
 
