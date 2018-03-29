@@ -19,7 +19,7 @@ class TimeBucketResultSetSpec extends Specification {
     @Shared
     static Drv drv
 
-    static String keyspace = 'testschema'
+    static String keyspace = 'testschema2'
 
     def setupSpec() {
         LogUtil.setLogLevel('org.apache', "ERROR")
