@@ -7,18 +7,19 @@ import cass.util.ByteBufU
 import cass.util.HashU
 import com.datastax.driver.core.ResultSet
 import com.datastax.driver.core.Row
+import helpers.LogUtil
+import helpers.TestSchema
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 import spock.lang.Shared
+
 import spock.lang.Specification
-import tickerproto.LogUtil
-import tickerproto.TickerSchema
 
 class CollatingResultSetSpec extends Specification {
 
     @Shared
     static Drv drv
 
-    static String keyspace = 'tickertest'
+    static String keyspace = 'testschema'
 
     def setupSpec() {
         LogUtil.setLogLevel('org.apache', "ERROR")
@@ -28,23 +29,23 @@ class CollatingResultSetSpec extends Specification {
 
         drv = new Drv(autoStart: true).nodes("127.0.0.1").port(9142)
         try {
-            drv.execSync(TickerSchema.CREATE_KS(1, keyspace), null)
+            drv.execSync(TestSchema.CREATE_KS(1, keyspace), null)
         } catch (Exception e) {
         }
         try {
-            drv.execSync(TickerSchema.CREATE_second_schedules('OLD', keyspace), null)
+            drv.execSync(TestSchema.CREATE_second_schedules('OLD', keyspace), null)
         } catch (Exception e) {
         }
         try {
-            drv.execSync(TickerSchema.CREATE_second_schedules('NEW', keyspace), null)
+            drv.execSync(TestSchema.CREATE_second_schedules('NEW', keyspace), null)
         } catch (Exception e) {
         }
 
         println 'testdir: ' + new File('./newfile').getAbsolutePath()
     }
 
-    String cqlOLD = TickerSchema.insertSecondSchedulesAllCols('OLD', keyspace)
-    String cqlNEW = TickerSchema.insertSecondSchedulesAllCols('NEW', keyspace)
+    String cqlOLD = TestSchema.insertSecondSchedulesAllCols('OLD', keyspace)
+    String cqlNEW = TestSchema.insertSecondSchedulesAllCols('NEW', keyspace)
 
     List data = [
             // interleaved but distinct column keys on the same rowkey
@@ -141,7 +142,7 @@ class CollatingResultSetSpec extends Specification {
             Object[] rowdata = [row.getLong(1), row.getString(2), row.getString(3), row.getString(4), row.getString(5), row.getString(6), row.getObject(7), row.getString(8), row.getString(9)] as Object[]
             retrievedData.add(rowdata)
             println "" + row.getLong(0) + " " + rowdata
-            rs.fetchMore()
+            rs.fetchMoreResults()
         }
 
         then:
@@ -152,7 +153,7 @@ class CollatingResultSetSpec extends Specification {
         rsOLD = drv.execSync(stOLD)
         rsNEW = drv.execSync(stNEW)
         retrievedData = []
-        for (Row rowi : new RsIterator<Row>(rs:new CollatingResultSet(oldRS: rsOLD, oldThreshold: 50, newRS: rsNEW, newThreshold: 50, rowComparator: rowComparator))) {
+        for (Row rowi : new CollatingResultSet(oldRS: rsOLD, oldThreshold: 50, newRS: rsNEW, newThreshold: 50, rowComparator: rowComparator).iterator()) {
             Object[] rowdata = [rowi.getLong(1), rowi.getString(2), rowi.getString(3), rowi.getString(4), rowi.getString(5), rowi.getString(6), rowi.getObject(7), rowi.getString(8), rowi.getString(9)] as Object[]
             retrievedData.add(rowdata)
         }
@@ -179,7 +180,7 @@ class CollatingResultSetSpec extends Specification {
             Object[] rowdata = [row.getLong(1), row.getString(2), row.getString(3), row.getString(4), row.getString(5), row.getString(6), row.getObject(7), row.getString(8), row.getString(9)] as Object[]
             retrievedData.add(rowdata)
             println "" + row.getLong(0) + " " + rowdata
-            rs.fetchMore()
+            rs.fetchMoreResults()
         }
 
         then:

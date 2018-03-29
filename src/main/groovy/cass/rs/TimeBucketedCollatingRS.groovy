@@ -15,12 +15,12 @@ import javax.xml.ws.Holder
 
 /**
  * This result set is intended to provide query services for a group of sharded tables with an implicit order to the
- * data shards. For example, ticker's scheduled table could be split across time-shards in different tables for easy
+ * data shards. For example, ****'s scheduled table could be split across time-shards in different tables for easy
  * truncation rather than wrestling with compaction, but we'd still want to be able to query across all the tables
  * as if they were one table.
  *
  * This assumes two tiers of time buckets: a series of short-term small buckets (14 x 12 hr buckets) that "churn" rapidly
- * and a set of longer-term (24 x 30 day) long term buckets. Those assumptions are specific to the ticker app. This
+ * and a set of longer-term (24 x 30 day) long term buckets. Those assumptions are specific to the ***** app. This
  * version of the class is kind of like migration resultset: it will query from both longterm and shortterm, collating
  * the results, but preferring the shortterm, which should have newer updates with proper update routing if the column
  * keys/execution second matches
@@ -53,7 +53,7 @@ class TimeBucketedCollatingRS implements Rs<Row> {
     long startSecond
     long currentMillis
 
-    String keyspace = 'ticker'
+    String keyspace = 'testschema'
     String shortTablePrefix = "scheduled_st_"
     String longTablePrefix = "scheduled_lt_"
 

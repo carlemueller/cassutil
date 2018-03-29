@@ -6,20 +6,20 @@ import cass.drv.St
 import cass.util.RowU
 import com.datastax.driver.core.Row
 import com.fasterxml.jackson.core.type.TypeReference
+import helpers.LogUtil
 import jsonutil.JSONUtil
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
-import tickerproto.LogUtil
-import tickerproto.TickerSchema
+import helpers.TestSchema
 
 class TimeBucketResultSetSpec extends Specification {
 
     @Shared
     static Drv drv
 
-    static String keyspace = 'tickertest'
+    static String keyspace = 'testschema'
 
     def setupSpec() {
         LogUtil.setLogLevel('org.apache', "ERROR")
@@ -29,18 +29,18 @@ class TimeBucketResultSetSpec extends Specification {
         EmbeddedCassandraServerHelper.startEmbeddedCassandra()
         drv = new Drv(autoStart: true).nodes("127.0.0.1").port(9142)
         try {
-            drv.execSync(TickerSchema.CREATE_KS(1, keyspace), null)
+            drv.execSync(TestSchema.CREATE_KS(1, keyspace), null)
         } catch (Exception e) {
         }
         try {
             10.times {
-                drv.execSync(TickerSchema.CREATE_scheduled('_st_' + it, keyspace), null)
+                drv.execSync(TestSchema.CREATE_scheduled('_st_' + it, keyspace), null)
             }
         } catch (Exception e) {
         }
         try {
             10.times {
-                drv.execSync(TickerSchema.CREATE_scheduled('_lt_' + it, keyspace), null)
+                drv.execSync(TestSchema.CREATE_scheduled('_lt_' + it, keyspace), null)
             }
         } catch (Exception e) {
         }
@@ -49,27 +49,27 @@ class TimeBucketResultSetSpec extends Specification {
     }
 
 
-    String cqlSt0 = TickerSchema.insertScheduledAllCols('_st_0', keyspace)
-    String cqlSt1 = TickerSchema.insertScheduledAllCols('_st_1', keyspace)
-    String cqlSt2 = TickerSchema.insertScheduledAllCols('_st_2', keyspace)
-    String cqlSt3 = TickerSchema.insertScheduledAllCols('_st_3', keyspace)
-    String cqlSt4 = TickerSchema.insertScheduledAllCols('_st_4', keyspace)
-    String cqlSt5 = TickerSchema.insertScheduledAllCols('_st_5', keyspace)
-    String cqlSt6 = TickerSchema.insertScheduledAllCols('_st_6', keyspace)
-    String cqlSt7 = TickerSchema.insertScheduledAllCols('_st_7', keyspace)
-    String cqlSt8 = TickerSchema.insertScheduledAllCols('_st_8', keyspace)
-    String cqlSt9 = TickerSchema.insertScheduledAllCols('_st_9', keyspace)
+    String cqlSt0 = TestSchema.insertScheduledAllCols('_st_0', keyspace)
+    String cqlSt1 = TestSchema.insertScheduledAllCols('_st_1', keyspace)
+    String cqlSt2 = TestSchema.insertScheduledAllCols('_st_2', keyspace)
+    String cqlSt3 = TestSchema.insertScheduledAllCols('_st_3', keyspace)
+    String cqlSt4 = TestSchema.insertScheduledAllCols('_st_4', keyspace)
+    String cqlSt5 = TestSchema.insertScheduledAllCols('_st_5', keyspace)
+    String cqlSt6 = TestSchema.insertScheduledAllCols('_st_6', keyspace)
+    String cqlSt7 = TestSchema.insertScheduledAllCols('_st_7', keyspace)
+    String cqlSt8 = TestSchema.insertScheduledAllCols('_st_8', keyspace)
+    String cqlSt9 = TestSchema.insertScheduledAllCols('_st_9', keyspace)
 
-    String cqlLt0 = TickerSchema.insertScheduledAllCols('_lt_0', keyspace)
-    String cqlLt1 = TickerSchema.insertScheduledAllCols('_lt_1', keyspace)
-    String cqlLt2 = TickerSchema.insertScheduledAllCols('_lt_2', keyspace)
-    String cqlLt3 = TickerSchema.insertScheduledAllCols('_lt_3', keyspace)
-    String cqlLt4 = TickerSchema.insertScheduledAllCols('_lt_4', keyspace)
-    String cqlLt5 = TickerSchema.insertScheduledAllCols('_lt_5', keyspace)
-    String cqlLt6 = TickerSchema.insertScheduledAllCols('_lt_6', keyspace)
-    String cqlLt7 = TickerSchema.insertScheduledAllCols('_lt_7', keyspace)
-    String cqlLt8 = TickerSchema.insertScheduledAllCols('_lt_8', keyspace)
-    String cqlLt9 = TickerSchema.insertScheduledAllCols('_lt_9', keyspace)
+    String cqlLt0 = TestSchema.insertScheduledAllCols('_lt_0', keyspace)
+    String cqlLt1 = TestSchema.insertScheduledAllCols('_lt_1', keyspace)
+    String cqlLt2 = TestSchema.insertScheduledAllCols('_lt_2', keyspace)
+    String cqlLt3 = TestSchema.insertScheduledAllCols('_lt_3', keyspace)
+    String cqlLt4 = TestSchema.insertScheduledAllCols('_lt_4', keyspace)
+    String cqlLt5 = TestSchema.insertScheduledAllCols('_lt_5', keyspace)
+    String cqlLt6 = TestSchema.insertScheduledAllCols('_lt_6', keyspace)
+    String cqlLt7 = TestSchema.insertScheduledAllCols('_lt_7', keyspace)
+    String cqlLt8 = TestSchema.insertScheduledAllCols('_lt_8', keyspace)
+    String cqlLt9 = TestSchema.insertScheduledAllCols('_lt_9', keyspace)
 
     List dataSh1 = [
             // short term buckets

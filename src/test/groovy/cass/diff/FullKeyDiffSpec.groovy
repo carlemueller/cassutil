@@ -2,18 +2,18 @@ package cass.diff
 
 import cass.drv.Drv
 import com.google.common.collect.Lists
+import helpers.LogUtil
+import helpers.TestSchema
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 import spock.lang.Shared
 import spock.lang.Specification
-import tickerproto.LogUtil
-import tickerproto.TickerSchema
 
 class FullKeyDiffSpec extends Specification {
 
     @Shared
     static Drv drv
 
-    static String keyspace = 'tickertest'
+    static String keyspace = 'testschema'
 
     def setupSpec() {
         LogUtil.setLogLevel('org.apache', "ERROR")
@@ -23,23 +23,23 @@ class FullKeyDiffSpec extends Specification {
 
         drv = new Drv(autoStart: true).nodes("127.0.0.1").port(9142)
         try {
-            drv.execSync(TickerSchema.CREATE_KS(1, keyspace), null)
+            drv.execSync(TestSchema.CREATE_KS(1, keyspace), null)
         } catch (Exception e) {
         }
         try {
-            drv.execSync(TickerSchema.CREATE_second_schedules('OLD', keyspace), null)
+            drv.execSync(TestSchema.CREATE_second_schedules('OLD', keyspace), null)
         } catch (Exception e) {
         }
         try {
-            drv.execSync(TickerSchema.CREATE_second_schedules('NEW', keyspace), null)
+            drv.execSync(TestSchema.CREATE_second_schedules('NEW', keyspace), null)
         } catch (Exception e) {
         }
 
         println 'testdir: ' + new File('./newfile').getAbsolutePath()
     }
 
-    static String cqlOLD = TickerSchema.insertSecondSchedulesAllCols('OLD', keyspace)
-    static String cqlNEW = TickerSchema.insertSecondSchedulesAllCols('NEW', keyspace)
+    static String cqlOLD = TestSchema.insertSecondSchedulesAllCols('OLD', keyspace)
+    static String cqlNEW = TestSchema.insertSecondSchedulesAllCols('NEW', keyspace)
 
     static List data = [
             // interleaved but distinct column keys on the same rowkey

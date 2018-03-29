@@ -13,7 +13,7 @@ import groovy.util.logging.Slf4j
 /**
  * This RS executes a query that is supposed to span multiple time buckets of a single class of time bucket.
  *
- * It currently assumes we are doing this for the ticker scheduled table between the defaults, buildCQL(),
+ * It currently assumes we are doing this for the testschema scheduled table between the defaults, buildCQL(),
  * and the hardcoded assumption that the timestamp is in position 1 of the column array (indexing from 0).
  */
 
@@ -26,7 +26,7 @@ class TimeBucketedSpanningRS implements Rs<Row> {
     long startSecond
     long currentMillis
 
-    String keyspace = 'ticker'
+    String keyspace = 'testschema'
     String tablePrefix = "scheduled_st_"
 
     long millisPerBucket = 1000L * 60L * 60L * 12L  //12hr

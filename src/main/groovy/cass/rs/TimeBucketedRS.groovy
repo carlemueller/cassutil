@@ -12,12 +12,12 @@ import groovy.util.logging.Slf4j
 
 /**
  * This result set is intended to provide query services for a group of sharded tables with an implicit order to the
- * data shards. For example, ticker's scheduled table could be split across time-shards in different tables for easy
+ * data shards. For example, ****'s scheduled table could be split across time-shards in different tables for easy
  * truncation rather than wrestling with compaction, but we'd still want to be able to query across all the tables
  * as if they were one table.
  *
  * This assumes two tiers of time buckets: a series of short-term small buckets (14 x 12 hr buckets) that "churn" rapidly
- * and a set of longer-term (24 x 30 day) long term buckets. Those assumptions are specific to the ticker app.
+ * and a set of longer-term (24 x 30 day) long term buckets. Those assumptions are specific to the **** app.
  *
  * On a daily basis there should be a process that transfers data from the current long term bucket into its forthcoming
  * 2x 12hr short term buckets. There are four inactive buckets: two for staging, one that is purged, and one "grace period"
@@ -39,7 +39,7 @@ class TimeBucketedRS implements Rs<Row> {
     long startSecond
     long currentMillis = System.currentTimeMillis()
 
-    String keyspace = 'ticker'
+    String keyspace = 'testschema'
     String shortTablePrefix = "scheduled_st_"
     String longTablePrefix = "scheduled_lt_"
 

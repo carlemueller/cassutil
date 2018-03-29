@@ -2,18 +2,19 @@ package cass.rs
 
 import cass.drv.Drv
 import cass.util.RowU
+import cass.util.TimeBucketU
 import com.datastax.driver.core.ResultSet
 import com.datastax.driver.core.Row
 import com.fasterxml.jackson.core.type.TypeReference
 import com.google.common.collect.Lists
+import helpers.LogUtil
+import helpers.TestSchema
 import jsonutil.JSONUtil
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 import spock.lang.Unroll
-import tickerproto.LogUtil
-import tickerproto.TickerSchema
 
 import javax.xml.ws.Holder
 
@@ -23,7 +24,7 @@ class TimeBucketedCollatingRSSpec extends Specification {
     @Shared
     static Drv drv
 
-    static String keyspace = 'tickertest'
+    static String keyspace = 'testschema'
 
     boolean verbose = false
 
@@ -40,25 +41,25 @@ class TimeBucketedCollatingRSSpec extends Specification {
         EmbeddedCassandraServerHelper.cleanEmbeddedCassandra()
         drv = new Drv(autoStart: true).nodes("127.0.0.1").port(9142)
         try {
-            drv.execSync(TickerSchema.CREATE_KS(1, keyspace), null)
+            drv.execSync(TestSchema.CREATE_KS(1, keyspace), null)
         } catch (Exception e) {
         }
         try {
             stBuckets.times {
-                drv.execSync(TickerSchema.CREATE_scheduled('_st_' + it, keyspace), null)
+                drv.execSync(TestSchema.CREATE_scheduled('_st_' + it, keyspace), null)
             }
         } catch (Exception e) {
         }
         try {
             ltBuckets.times {
-                drv.execSync(TickerSchema.CREATE_scheduled('_lt_' + it, keyspace), null)
+                drv.execSync(TestSchema.CREATE_scheduled('_lt_' + it, keyspace), null)
             }
         } catch (Exception e) {
         }
 
         try {
-            drv.execSync(TickerSchema.CREATE_scheduled('_legacy', keyspace), null)
-            drv.execSync(TickerSchema.CREATE_scheduled('_baseline', keyspace), null)
+            drv.execSync(TestSchema.CREATE_scheduled('_legacy', keyspace), null)
+            drv.execSync(TestSchema.CREATE_scheduled('_baseline', keyspace), null)
         } catch (Exception e) {
         }
 
@@ -195,21 +196,21 @@ class TimeBucketedCollatingRSSpec extends Specification {
             rs.activeShortTermBuckets.times {
                 long bucketMillis = curMillis + (long) it * rs.millisPerShort
                 boolean startBucket = rs.startSecond * 1000L >= TimeBucketedCollatingRS.bucketBegin(bucketMillis, rs.millisPerShort) &&
-                        rs.startSecond * 1000L <= TimeBucketedCollatingRS.bucketEnd(bucketMillis, rs.millisPerShort)
-                println "    bucket $it: aka ${TimeBucketedCollatingRS.calcBucket(bucketMillis, rs.millisPerShort, rs.shortTermBuckets)}" +
+                        rs.startSecond * 1000L <= TimeBucketU.bucketEnd(bucketMillis, rs.millisPerShort)
+                println "    bucket $it: aka ${TimeBucketU.calcBucket(bucketMillis, rs.millisPerShort, rs.shortTermBuckets)}" +
                         "${startBucket ? ' START' : ''}" +
-                        " begin ${TimeBucketedCollatingRS.bucketBegin(bucketMillis, rs.millisPerShort)}" +
-                        " end ${TimeBucketedCollatingRS.bucketEnd(bucketMillis, rs.millisPerShort)}"
+                        " begin ${TimeBucketU.bucketBegin(bucketMillis, rs.millisPerShort)}" +
+                        " end ${TimeBucketU.bucketEnd(bucketMillis, rs.millisPerShort)}"
             }
             println "  long bucket since epoch: ${curMillis.intdiv(rs.millisPerLong)}"
             rs.activeLongTermBuckets.times {
                 long bucketMillis = curMillis + (long) it * rs.millisPerLong
                 boolean startBucket = rs.startSecond * 1000L >= TimeBucketedCollatingRS.bucketBegin(bucketMillis, rs.millisPerLong) &&
-                        rs.startSecond * 1000L <= TimeBucketedCollatingRS.bucketEnd(bucketMillis, rs.millisPerLong)
-                println "    bucket $it: aka ${TimeBucketedCollatingRS.calcBucket(bucketMillis, rs.millisPerLong, rs.longTermBuckets)}" +
+                        rs.startSecond * 1000L <= TimeBucketU.bucketEnd(bucketMillis, rs.millisPerLong)
+                println "    bucket $it: aka ${TimeBucketU.calcBucket(bucketMillis, rs.millisPerLong, rs.longTermBuckets)}" +
                         "${startBucket ? ' START' : ''}" +
-                        " begin ${TimeBucketedCollatingRS.bucketBegin(bucketMillis, rs.millisPerLong)}" +
-                        " end ${TimeBucketedCollatingRS.bucketEnd(bucketMillis, rs.millisPerLong)}"
+                        " begin ${TimeBucketU.bucketBegin(bucketMillis, rs.millisPerLong)}" +
+                        " end ${TimeBucketU.bucketEnd(bucketMillis, rs.millisPerLong)}"
             }
         }
 
@@ -220,7 +221,7 @@ class TimeBucketedCollatingRSSpec extends Specification {
         where:
         msST     | stb | actSTB | msLT        | ltb | actLTB | genRows | rand | thresh | fetch | startMSOffset | desc
         1121121L | 12  | 7      | 2002001L    | 7   | 4      | 11000   | 1000 | 22     | 33    | 1121121L * 2L | "nonaligning buckets and st/lt border overlap"
-        100_000L | 10  | 5      | 10_000_000L | 10  | 7      | 311257  | 111  | 5      | 10    | 58000L        | "300000 test"
+        //100_000L | 10  | 5      | 10_000_000L | 10  | 7      | 311257  | 111  | 5      | 10    | 58000L        | "300000 test"
     }
 
     TimeBucketedCollatingRS rs = new TimeBucketedCollatingRS(
@@ -263,16 +264,16 @@ class TimeBucketedCollatingRSSpec extends Specification {
                 Integer shortBucket = calculateBucket(jobMillis, curMillis, rs.millisPerShort, rs.activeShortTermBuckets, rs.shortTermBuckets)
                 if (shortBucket != null) {
                     drv.execSync(
-                            TickerSchema.insertScheduledAllCols("_st_${shortBucket}", keyspace),
+                            TestSchema.insertScheduledAllCols("_st_${shortBucket}", keyspace),
                             [group, jobMillis, name, jobtype, 'shortdata', 'expr', 1L, 'good', 'UTC'] as Object[])
                     drv.execSync(
-                            TickerSchema.insertScheduledAllCols("_baseline", keyspace),
+                            TestSchema.insertScheduledAllCols("_baseline", keyspace),
                             [group, jobMillis, name, jobtype, 'shortdata', 'expr', 1L, 'good', 'UTC'] as Object[])
                     // 1% of the time, have a conflict in both long and short that short should "win"
                     if (rnd.nextInt(100) < 1) {
                         Integer longBucket = calculateBucket(jobMillis, curMillis, rs.millisPerLong, rs.activeLongTermBuckets, rs.longTermBuckets)
                         drv.execSync(
-                                TickerSchema.insertScheduledAllCols("_lt_${longBucket}", keyspace),
+                                TestSchema.insertScheduledAllCols("_lt_${longBucket}", keyspace),
                                 [group, jobMillis, name, jobtype, 'longdata', 'expr', 1L, 'good', 'UTC'] as Object[])
                     }
                 }
@@ -286,10 +287,10 @@ class TimeBucketedCollatingRSSpec extends Specification {
                 Integer longBucket = calculateBucket(jobMillis, curMillis, rs.millisPerLong, rs.activeLongTermBuckets, rs.longTermBuckets)
                 if (longBucket != null) {
                     drv.execSync(
-                            TickerSchema.insertScheduledAllCols("_lt_${longBucket}", keyspace),
+                            TestSchema.insertScheduledAllCols("_lt_${longBucket}", keyspace),
                             [group, jobMillis, name, jobtype, 'longdata', 'expr', 1L, 'good', 'UTC'] as Object[])
                     drv.execSync(
-                            TickerSchema.insertScheduledAllCols("_baseline", keyspace),
+                            TestSchema.insertScheduledAllCols("_baseline", keyspace),
                             [group, jobMillis, name, jobtype, 'longdata', 'expr', 1L, 'good', 'UTC'] as Object[])
                 }
             } else {
@@ -300,22 +301,22 @@ class TimeBucketedCollatingRSSpec extends Specification {
                 if (jobMillis in usedMillis) {
                     dupeMillis.add(jobMillis)
                 }
-                if (jobMillis < TimeBucketedCollatingRS.bucketBegin(curMillis, rs.millisPerLong) + rs.activeLongTermBuckets * rs.millisPerLong - 1L)
+                if (jobMillis < TimeBucketU.bucketBegin(curMillis, rs.millisPerLong) + rs.activeLongTermBuckets * rs.millisPerLong - 1L)
                     drv.execSync(
-                            TickerSchema.insertScheduledAllCols("_legacy", keyspace),
+                            TestSchema.insertScheduledAllCols("_legacy", keyspace),
                             [group, jobMillis, name, jobtype, 'legacy', 'expr', 1L, 'good', 'UTC'] as Object[])
                 drv.execSync(
-                        TickerSchema.insertScheduledAllCols("_baseline", keyspace),
+                        TestSchema.insertScheduledAllCols("_baseline", keyspace),
                         [group, jobMillis, name, jobtype, 'legacy', 'expr', 1L, 'good', 'UTC'] as Object[])
             }
         } // end test data generation
     }
 
     static Integer calculateBucket(long millis, long curMillis, long millisPerBucket, long activeBuckets, long totalBuckets) {
-        if (TimeBucketedCollatingRS.bucketOffset(millis, curMillis, millisPerBucket) >= activeBuckets) {
+        if (TimeBucketU.bucketOffset(millis, curMillis, millisPerBucket) >= activeBuckets) {
             return null
         }
-        return (int) TimeBucketedCollatingRS.calcBucket(millis, millisPerBucket, totalBuckets)
+        return (int) TimeBucketU.calcBucket(millis, millisPerBucket, totalBuckets)
     }
 
 
