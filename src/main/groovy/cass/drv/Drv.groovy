@@ -11,7 +11,12 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import javax.annotation.PreDestroy
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
 import java.nio.ByteBuffer
+import java.security.KeyStore
+import java.security.SecureRandom
 import java.time.Instant
 import java.time.ZoneId
 import java.util.concurrent.ExecutionException
@@ -31,12 +36,25 @@ class Drv {
     private static final long DEFAULT_RECONNECTION_DELAY_MILLIS = 60000
     private static final long CLOSE_WAIT_MILLIS = 5000
 
+    static class SSLConf {
+        String contextType = "SSL"
+        List<String> cipherSuites = ["TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA"]
+        String truststoreType = "JKS"
+        String truststorePath
+        String truststorePassword
+        String keystoreType = "JKS"
+        String keystorePath
+        String keystorePassword
+    }
+
+
     List<String> nodes = ['127.0.0.1']
     Integer port = null // default is 9042
     boolean autoStart = true
     String defaultConsistency = "LOCAL_QUORUM"
     String u
     String p
+    SSLConf ssl
 
     Cluster.Builder builder
 
@@ -368,6 +386,9 @@ class Drv {
                         log.info("DRV INIT: port: $port")
                         builder = builder.withPort(port)
                     }
+                    if (ssl) {
+                        configureSSL(builder,ssl)
+                    }
                     // build cluster
                     cluster = builder.build()
                     clusterSession = cluster.connect()
@@ -382,6 +403,38 @@ class Drv {
                 }
             }
         }
+    }
+
+    private static void configureSSL(Cluster.Builder builder, SSLConf sslConf) {
+        if (sslConf) {
+            builder.withSSL(JdkSSLOptions.builder().withSSLContext(makeSSLContext(sslConf)).withCipherSuites(sslConf.cipherSuites as String[]).build())
+        } else {
+            builder.withSSL()
+        }
+    }
+
+    private static SSLContext makeSSLContext(SSLConf sslConf) {
+        File checkKeystore = new File(sslConf.truststorePath)
+        assert new File(sslConf.keystorePath)?.exists() : "key store ${sslConf.keystorePath} aka ${checkKeystore.canonicalPath} not found"
+        File checkTruststore = new File(sslConf.truststorePath)
+        assert new File(sslConf.truststorePath)?.exists() : "trust store ${sslConf.truststorePath} aka ${checkTruststore.canonicalPath} not found"
+
+        SSLContext sslctx = SSLContext.getInstance(sslConf.contextType)
+        FileInputStream tsf = new FileInputStream(sslConf.truststorePath)
+        KeyStore ts = KeyStore.getInstance(sslConf.truststoreType)
+        ts.load(tsf, sslConf.truststorePassword?.toCharArray())
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        tmf.init(ts)
+
+        FileInputStream ksf = new FileInputStream(sslConf.keystorePath)
+        KeyStore ks = KeyStore.getInstance(sslConf.keystoreType)
+        ks.load(ksf, sslConf.keystorePassword?.toCharArray())
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+
+        kmf.init(ks, sslConf.keystorePassword?.toCharArray())
+
+        sslctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom())
+        return sslctx
     }
 
     // --- shutdown
