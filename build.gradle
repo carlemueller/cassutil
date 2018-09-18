@@ -1,5 +1,6 @@
-group 'cem-cassdoc'
+group 'com.github.cem-cassdoc'
 
+apply plugin: 'maven'
 apply plugin: 'groovy'
 
 version = 'v1.0.3'
