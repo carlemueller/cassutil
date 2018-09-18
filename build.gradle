@@ -1,8 +1,8 @@
-group 'fantabulous-cassutil'
+group 'cem-cassdoc'
 
 apply plugin: 'groovy'
 
-version = '1.0.3'
+version = 'v1.0.3'
 sourceCompatibility = 1.8
 
 repositories {
